@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>My To-Do App</title>
+
+    <style>
+
+        body {
+            font-family: Arial;
+            background-color: #f5f5f5;
+            text-align: center;
+        }
+
+        h1 {
+            margin-top: 40px;
+        }
+
+        input {
+            padding: 10px;
+            width: 200px;
+        }
+
+        button {
+            padding: 10px;
+            margin-left: 5px;
+            cursor: pointer;
+        }
+
+        #filters {
+            margin-top: 15px;
+        }
+
+        #filters button {
+            margin: 5px;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+            margin-top: 20px;
+        }
+
+        li {
+            background: white;
+            margin: 10px auto;
+            padding: 10px;
+            width: 300px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 5px;
+        }
+
+        .completed {
+            text-decoration: line-through;
+            color: gray;
+        }
+
+        li button {
+            background-color: red;
+            color: white;
+            border: none;
+            border-radius: 3px;
+        }
+
+        /* 当前筛选高亮 */
+        .filter-btn.active {
+            background-color: black;
+            color: white;
+        }
+
+    </style>
+
+</head>
+<body>
+
+    <h1>My To-Do List</h1>
+
+    <input id="taskInput" type="text" placeholder="Enter a task">
+
+    <button id="addBtn">Add Task</button>
+
+    <div id="filters">
+        <button class="filter-btn" onclick="filterTasks('all')">All</button>
+        <button class="filter-btn" onclick="filterTasks('active')">Active</button>
+        <button class="filter-btn" onclick="filterTasks('completed')">Completed</button>
+    </div>
+
+    <ul id="taskList"></ul>
+
+    <script>
+
+        let button = document.getElementById("addBtn");
+        let input = document.getElementById("taskInput");
+        let list = document.getElementById("taskList");
+
+        let tasks = [];
+
+        // 创建任务
+        function createTask(task) {
+
+            let li = document.createElement("li");
+
+            let span = document.createElement("span");
+            span.textContent = task.text;
+
+            // 初始化状态
+            if (task.completed) {
+                span.classList.add("completed");
+                li.setAttribute("data-completed", "true");
+            } else {
+                li.setAttribute("data-completed", "false");
+            }
+
+            // 点击切换完成状态
+            span.addEventListener("click", function() {
+
+                span.classList.toggle("completed");
+
+                let isCompleted = span.classList.contains("completed");
+
+                li.setAttribute("data-completed", isCompleted);
+
+                task.completed = isCompleted;
+
+                localStorage.setItem("tasks", JSON.stringify(tasks));
+            });
+
+            let deleteBtn = document.createElement("button");
+            deleteBtn.textContent = "Delete";
+
+            deleteBtn.addEventListener("click", function() {
+                li.remove();
+
+                let index = tasks.indexOf(task);
+                if (index > -1) {
+                    tasks.splice(index, 1);
+                }
+
+                localStorage.setItem("tasks", JSON.stringify(tasks));
+            });
+
+            li.appendChild(span);
+            li.appendChild(deleteBtn);
+
+            list.appendChild(li);
+        }
+
+        // 添加任务
+        button.addEventListener("click", function() {
+
+            let taskText = input.value;
+
+            if (taskText.trim() === "") {
+                return;
+            }
+
+            let task = {
+                text: taskText,
+                completed: false
+            };
+
+            createTask(task);
+
+            tasks.push(task);
+            localStorage.setItem("tasks", JSON.stringify(tasks));
+
+            input.value = "";
+        });
+
+        // Enter 添加
+        input.addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                button.click();
+            }
+        });
+
+        // 加载数据
+        let savedTasks = JSON.parse(localStorage.getItem("tasks"));
+
+        if (savedTasks) {
+            tasks = savedTasks;
+
+            tasks.forEach(function(task) {
+                createTask(task);
+            });
+        }
+
+        // 筛选功能
+        function filterTasks(type) {
+
+            // 记录当前筛选
+            localStorage.setItem("filter", type);
+
+            let allTasks = document.querySelectorAll("li");
+
+            // 清除按钮高亮
+            let buttons = document.querySelectorAll(".filter-btn");
+            buttons.forEach(function(btn) {
+                btn.classList.remove("active");
+            });
+
+            // 设置当前按钮高亮
+            let activeBtn = document.querySelector(`button[onclick="filterTasks('${type}')"]`);
+            if (activeBtn) {
+                activeBtn.classList.add("active");
+            }
+
+            allTasks.forEach(function(li) {
+
+                let completed = li.getAttribute("data-completed");
+
+                if (type === "all") {
+                    li.style.display = "flex";
+                }
+
+                else if (type === "active") {
+                    li.style.display = (completed === "false") ? "flex" : "none";
+                }
+
+                else if (type === "completed") {
+                    li.style.display = (completed === "true") ? "flex" : "none";
+                }
+
+            });
+        }
+
+        // 恢复筛选状态
+        let savedFilter = localStorage.getItem("filter");
+
+        if (savedFilter) {
+            filterTasks(savedFilter);
+        }
+
+    </script>
+
+</body>
+</html>
